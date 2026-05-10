@@ -214,6 +214,42 @@ void helper_cbo_zero(CPURISCVState *env, target_ulong address)
     }
 }
 
+void HELPER(xg233_dma)(CPURISCVState *env, target_ulong src,
+                       target_ulong dst, target_ulong gran)
+{
+    uintptr_t ra = GETPC();
+    target_ulong width;
+    switch (gran) {
+    case 0:
+        width = 8;
+        break;
+    case 1:
+        width = 16;
+        break;
+    case 2:
+        width = 32;
+        break;
+    default:
+        /*
+         * The ISA marks out-of-range granularity values as undefined.
+         * Bail out early here to avoid undefined shift behavior in C.
+         */
+        return;
+    }
+    
+    for (target_ulong i = 0; i < width; ++i) {
+        target_ulong src_row = i * width;
+        
+        for (target_ulong j = 0; j < width; ++j) {
+            target_ulong src_off = (src_row + j) << 2;
+            target_ulong dst_off = ((j * width) + i) << 2;
+            uint32_t val = cpu_ldl_data_ra(env, src + src_off, ra);
+
+            cpu_stl_data_ra(env, dst + dst_off, val, ra);
+        }
+    }
+}
+
 /*
  * check_zicbom_access
  *
