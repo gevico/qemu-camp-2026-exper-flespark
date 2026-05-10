@@ -1,0 +1,14 @@
+
+# Fields:
+%rs2       20:5
+%rs1       15:5
+%rd        7:5
+
+# Argument sets:
+&r      rd rs1 rs2              !extern
+
+# Formats:
+@r    .......   ..... ..... ... ..... .......  &r  %rs2 %rs1 %rd
+
+# *** XG233 Extend Instructions ***
+dma     0000110 ..... ..... 110 ..... 1111011 @r
