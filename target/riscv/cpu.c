@@ -1355,6 +1355,7 @@ const RISCVCPUMultiExtConfig riscv_cpu_extensions[] = {
 };
 
 const RISCVCPUMultiExtConfig riscv_cpu_vendor_exts[] = {
+    MULTI_EXT_CFG_BOOL("xg233", ext_xg233, false),
     MULTI_EXT_CFG_BOOL("xtheadba", ext_xtheadba, false),
     MULTI_EXT_CFG_BOOL("xtheadbb", ext_xtheadbb, false),
     MULTI_EXT_CFG_BOOL("xtheadbs", ext_xtheadbs, false),
@@ -3089,6 +3090,19 @@ static const TypeInfo riscv_cpu_type_infos[] = {
 #endif
 
 #if defined(TARGET_RISCV64)
+    DEFINE_RISCV_CPU(TYPE_RISCV_CPU_G233, TYPE_RISCV_VENDOR_CPU,
+        .misa_mxl_max = MXL_RV64,
+        .misa_ext = RVI | RVM | RVA | RVC | RVU,
+        .priv_spec = PRIV_VERSION_1_12_0,
+        .vext_spec = VEXT_VERSION_1_00_0,
+        .cfg.ext_xg233 = true,
+        .cfg.ext_zicsr = true,
+        .cfg.ext_zifencei = true,
+        .cfg.mmu = true,
+        .cfg.pmp = true,
+        .cfg.max_satp_mode = VM_1_10_SV39,
+    ),
+
     DEFINE_RISCV_CPU(TYPE_RISCV_CPU_BASE64, TYPE_RISCV_DYNAMIC_CPU,
         .cfg.max_satp_mode = VM_1_10_SV57,
         .misa_mxl_max = MXL_RV64,
