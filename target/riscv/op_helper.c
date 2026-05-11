@@ -230,10 +230,7 @@ void HELPER(xg233_dma)(CPURISCVState *env, target_ulong src,
         width = 32;
         break;
     default:
-        /*
-         * The ISA marks out-of-range granularity values as undefined.
-         * Bail out early here to avoid undefined shift behavior in C.
-         */
+        riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, ra);
         return;
     }
     
@@ -247,6 +244,41 @@ void HELPER(xg233_dma)(CPURISCVState *env, target_ulong src,
 
             cpu_stl_data_ra(env, dst + dst_off, val, ra);
         }
+    }
+}
+
+void HELPER(xg233_sort)(CPURISCVState *env, target_ulong src,
+                        target_ulong size, target_ulong cnt)
+{
+    uintptr_t ra = GETPC();
+    if (cnt > size) {
+        riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, ra);
+    }
+    if (cnt <= 1) {
+        return;
+    }
+
+    g_autofree int32_t *local_buf = g_new(int32_t, cnt);
+    if (!local_buf) {
+        riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, ra);
+        return;
+    }
+    for (target_ulong i = 0; i < cnt; ++i) {
+        local_buf[i] = cpu_ldl_data_ra(env, src + (i << 2), ra);
+    }
+
+    for (target_ulong i = 0; i < cnt - 1; ++i) {
+        for (target_ulong j = 0; j < cnt - i - 1; ++j) {
+            if (local_buf[j] > local_buf[j + 1]) {
+                int32_t tmp = local_buf[j];
+                local_buf[j] = local_buf[j + 1];
+                local_buf[j + 1] = tmp;
+            }
+        }
+    }
+
+    for (target_ulong i = 0; i < cnt; ++i) {
+        cpu_stl_data_ra(env, src + (i << 2), local_buf[i], ra);
     }
 }
 
