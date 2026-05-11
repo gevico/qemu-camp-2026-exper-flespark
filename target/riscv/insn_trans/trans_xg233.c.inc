@@ -16,3 +16,15 @@ static bool trans_dma(DisasContext *ctx, arg_r *a)
 
     return true;
 }
+
+static bool trans_sort(DisasContext *ctx, arg_r *a)
+{
+    REQUIRE_XG233(ctx);
+    TCGv src = get_gpr(ctx, a->rs1, EXT_NONE);
+    TCGv size = get_gpr(ctx, a->rs2, EXT_NONE);
+    TCGv cnt = get_gpr(ctx, a->rd, EXT_NONE);
+
+    gen_helper_xg233_sort(tcg_env, src, size, cnt);
+
+    return true;
+}
