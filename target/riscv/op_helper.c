@@ -259,10 +259,6 @@ void HELPER(xg233_sort)(CPURISCVState *env, target_ulong src,
     }
 
     g_autofree int32_t *local_buf = g_new(int32_t, cnt);
-    if (!local_buf) {
-        riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, ra);
-        return;
-    }
     for (target_ulong i = 0; i < cnt; ++i) {
         local_buf[i] = cpu_ldl_data_ra(env, src + (i << 2), ra);
     }
@@ -279,6 +275,26 @@ void HELPER(xg233_sort)(CPURISCVState *env, target_ulong src,
 
     for (target_ulong i = 0; i < cnt; ++i) {
         cpu_stl_data_ra(env, src + (i << 2), local_buf[i], ra);
+    }
+}
+
+void HELPER(xg233_crush)(CPURISCVState *env, target_ulong src,
+                         target_ulong dst, target_ulong len)
+{
+    uintptr_t ra = GETPC();
+    target_ulong dst_len = (len + 1) / 2;
+    g_autofree uint8_t *local_buf = g_new(uint8_t, dst_len);
+    for (target_ulong i = 0; i < dst_len; i++) {
+        local_buf[i] = cpu_ldub_data_ra(env, src + (i * 2), ra) & 0x0F;
+        local_buf[i] |= (cpu_ldub_data_ra(env, src + (i * 2) + 1, ra) & 0x0F) << 4; 
+    }
+
+    if (dst_len * 2 > len) {
+        local_buf[dst_len - 1] &= 0x0F;
+    }
+
+    for (target_ulong i = 0; i < dst_len; i++) {
+        cpu_stb_data_ra(env, dst + i, local_buf[i], ra);
     }
 }
 
