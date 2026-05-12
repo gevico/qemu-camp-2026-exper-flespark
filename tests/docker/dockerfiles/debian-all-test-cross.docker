@@ -6,6 +6,10 @@
 
 FROM docker.io/library/debian:13-slim
 
+RUN sed -i -e 's|http://deb.debian.org/|http://mirrors.tencentyun.com/|g' \
+           -e 's|http://deb.debian.org/|http://mirrors.tencentyun.com/|g' \
+           /etc/apt/sources.list.d/debian.sources
+
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y eatmydata && \
