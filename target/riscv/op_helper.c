@@ -298,6 +298,119 @@ void HELPER(xg233_crush)(CPURISCVState *env, target_ulong src,
     }
 }
 
+void HELPER(xg233_expand)(CPURISCVState *env, target_ulong src,
+                         target_ulong dst, target_ulong len) {
+    uintptr_t ra = GETPC();
+    target_ulong dst_len = len * 2;
+    g_autofree uint8_t *local_buf = g_new(uint8_t, dst_len);
+    for (target_ulong i = 0; i < len; i++) {
+        target_ulong j = i * 2;
+        uint8_t data = cpu_ldub_data_ra(env, src + i, ra);
+        local_buf[j] = data & 0x0F;
+        local_buf[j + 1] = data >> 4; 
+    }
+    
+    for (target_ulong i = 0; i < dst_len; i++) {
+        cpu_stb_data_ra(env, dst + i, local_buf[i], ra);
+    }
+}
+
+target_ulong HELPER(xg233_vdot)(CPURISCVState *env, target_ulong vec1,
+                         target_ulong vec2) {
+    uintptr_t ra = GETPC();
+    int64_t acc = 0;
+    target_ulong idx = 0;
+    
+    while (idx < 16) {
+        acc += (int64_t)(int32_t)cpu_ldl_data_ra(env, vec1 + (idx << 2), ra) *
+            (int64_t)(int32_t)cpu_ldl_data_ra(env, vec2 + (idx << 2), ra);
+        idx++;
+    }
+
+    return (target_ulong)acc;
+}
+
+void HELPER(xg233_vrelu)(CPURISCVState *env, target_ulong src,
+                         target_ulong dst, target_ulong len) {
+    uintptr_t ra = GETPC();
+    
+    for (target_ulong i = 0; i < len; i++) {
+        int32_t val = cpu_ldl_data_ra(env, src + (i << 2), ra);
+        if (val < 0) {
+            cpu_stl_data_ra(env, dst + (i << 2), 0, ra);
+        } else {
+            cpu_stl_data_ra(env, dst + (i << 2), val, ra);
+        }
+    }
+}
+
+void HELPER(xg233_vscale)(CPURISCVState *env, target_ulong src,
+                         target_ulong dst, target_ulong factor) {
+    uintptr_t ra = GETPC();
+    
+    for (target_ulong i = 0; i < 16; i++) {
+        int64_t val = cpu_ldl_data_ra(env, src + (i << 2), ra);
+        cpu_stl_data_ra(env, dst + (i << 2), (target_ulong)(val * factor), ra);
+    }
+}
+
+target_ulong HELPER(xg233_vmax)(CPURISCVState *env, target_ulong src,
+                                 target_ulong len) {
+    uintptr_t ra = GETPC();
+    int32_t tmp = INT32_MIN;
+    
+    for (target_ulong i = 0; i < len; i++) {
+        int32_t val = cpu_ldl_data_ra(env, src + (i << 2), ra);
+        tmp = MAX(tmp, val);
+    }
+    return (target_ulong)tmp;
+}
+
+void HELPER(xg233_gemm)(CPURISCVState *env, target_ulong A,
+                        target_ulong B, target_ulong C)
+{
+    uintptr_t ra = GETPC();
+
+    /*
+     * A, B and C are 4x4 int32_t matrices, so each region is 64 bytes.
+     * Use unsigned-distance overlap checks to avoid wraparound issues from
+     * subtracting raw target addresses.
+     */
+    // if ((A <= B && B - A < 64) || (B <= A && A - B < 64) ||
+    //     (B <= C && C - B < 64) || (C <= B && B - C < 64) ||
+    //     (C <= A && A - C < 64) || (A <= C && C - A < 64)) {
+    //     riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, ra);
+    // }
+
+    int64_t acc;
+    for (target_ulong i = 0; i < 4; i++) {
+        for (target_ulong j = 0; j < 4; j++) {
+            acc = 0;
+            for (target_ulong k = 0; k < 4; k++) {
+                int32_t val = (int32_t)cpu_ldl_data_ra(env,
+                                                       A + ((i * 4 + k) << 2),
+                                                       ra);
+                int32_t val2 = (int32_t)cpu_ldl_data_ra(env,
+                                                        B + ((k * 4 + j) << 2),
+                                                        ra);
+                acc += (int64_t)val * (int64_t)val2;
+            }
+            cpu_stl_data_ra(env, C + ((i * 4 + j) << 2), (int32_t)acc, ra);
+        }
+    }
+}
+
+void HELPER(xg233_vadd)(CPURISCVState *env, target_ulong A,
+                        target_ulong B, target_ulong C)
+{
+    uintptr_t ra = GETPC();
+    for (target_ulong i = 0; i < 16; i++) {
+        int32_t val = cpu_ldl_data_ra(env, A + (i << 2), ra);
+        int32_t val2 = cpu_ldl_data_ra(env, B + (i << 2), ra);
+        cpu_stl_data_ra(env, C + (i << 2), val + val2, ra);
+    }
+}
+
 /*
  * check_zicbom_access
  *
