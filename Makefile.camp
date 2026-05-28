@@ -84,6 +84,8 @@ $(BUILD_DIR)/config-host.mak:
 .PHONY: build
 build: $(BUILD_DIR)/config-host.mak
 	$(MAKE) -C $(BUILD_DIR) -j$(JOBS)
+	@ln -sf $(SRC_DIR)/tests/gevico/qtest/Makefile \
+	    $(BUILD_DIR)/tests/gevico/qtest/Makefile
 	@echo "--- Build done ---"
 
 .PHONY: rebuild
