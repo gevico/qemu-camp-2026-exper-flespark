@@ -90,10 +90,12 @@ enum {
     VIRT_PLATFORM_BUS,
     VIRT_PCIE_ECAM,
     VIRT_IOMMU_SYS,
+    VIRT_GPIO,
 };
 
 enum {
     UART0_IRQ = 1,
+    GPIO_IRQ = 2,
     VIRTIO_IRQ = 6, /* 6 to 13 */
     VIRTIO_COUNT = 8,
     RTC_IRQ = 14,

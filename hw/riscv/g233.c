@@ -35,6 +35,7 @@
 #include "hw/riscv/riscv_hart.h"
 #include "hw/riscv/iommu.h"
 #include "hw/riscv/riscv-iommu-bits.h"
+#include "hw/gpio/g233_gpio.h"
 #include "hw/riscv/g233.h"
 #include "hw/riscv/boot.h"
 #include "hw/riscv/numa.h"
@@ -102,6 +103,7 @@ static const MemMapEntry virt_memmap[] = {
     [VIRT_PCIE_ECAM] =    { 0x30000000,    0x10000000 },
     [VIRT_PCIE_MMIO] =    { 0x40000000,    0x40000000 },
     [VIRT_DRAM] =         { 0x80000000,           0x0 },
+    [VIRT_GPIO] =         { 0x10012000,         0x100 },
 };
 
 /* PCIe high mmio is fixed for RV32 */
@@ -1011,6 +1013,32 @@ static void create_fdt_rtc(RISCVG233State *s,
     }
 }
 
+static void create_fdt_gpio(RISCVG233State *s,
+                             uint32_t irq_mmio_phandle)
+{
+    g_autofree char *name = NULL;
+    MachineState *ms = MACHINE(s);
+
+    name = g_strdup_printf("/soc/gpio@%"HWADDR_PRIx,
+                           s->memmap[VIRT_GPIO].base);
+    qemu_fdt_add_subnode(ms->fdt, name);
+    qemu_fdt_setprop_string(ms->fdt, name, "compatible",
+                            "gevico,g233-gpio");
+    qemu_fdt_setprop_sized_cells(ms->fdt, name, "reg",
+                                  2, s->memmap[VIRT_GPIO].base,
+                                  2, s->memmap[VIRT_GPIO].size);
+    qemu_fdt_setprop_cell(ms->fdt, name, "interrupt-parent",
+                          irq_mmio_phandle);
+    if (s->aia_type == G233_AIA_TYPE_NONE) {
+        qemu_fdt_setprop_cell(ms->fdt, name, "interrupts", GPIO_IRQ);
+    } else {
+        qemu_fdt_setprop_cells(ms->fdt, name, "interrupts", GPIO_IRQ, 0x4);
+    }
+    qemu_fdt_setprop_cell(ms->fdt, name, "#gpio-cells", 2);
+    qemu_fdt_setprop(ms->fdt, name, "gpio-controller", NULL, 0);
+    qemu_fdt_setprop_cell(ms->fdt, name, "ngpio", G233_GPIO_PINS);
+}
+
 static void create_fdt_flash(RISCVG233State *s)
 {
     MachineState *ms = MACHINE(s);
@@ -1158,6 +1186,8 @@ static void finalize_fdt(RISCVG233State *s)
     create_fdt_uart(s, irq_mmio_phandle);
 
     create_fdt_rtc(s, irq_mmio_phandle);
+
+    create_fdt_gpio(s, irq_mmio_phandle);
 }
 
 static void create_fdt(RISCVG233State *s)
@@ -1714,6 +1744,11 @@ static void virt_machine_init(MachineState *machine)
 
     sysbus_create_simple("goldfish_rtc", s->memmap[VIRT_RTC].base,
         qdev_get_gpio_in(mmio_irqchip, RTC_IRQ));
+
+    /* GPIO controller */
+    sysbus_create_simple(TYPE_G233_GPIO,
+        s->memmap[VIRT_GPIO].base,
+        qdev_get_gpio_in(mmio_irqchip, GPIO_IRQ));
 
     for (i = 0; i < ARRAY_SIZE(s->flash); i++) {
         /* Map legacy -drive if=pflash to machine properties */
