@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "llvm-vs-code-extensions.vscode-clangd",
+    "mesonbuild.vscode-meson",
+    "EditorConfig.EditorConfig",
+    "ms-vscode.cpptools",
+    "bierner.markdown-preview-github-styles",
+    "streetsidesoftware.code-spell-checker",
+  ]
+}
