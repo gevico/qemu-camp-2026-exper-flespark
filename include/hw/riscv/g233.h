@@ -91,11 +91,13 @@ enum {
     VIRT_PCIE_ECAM,
     VIRT_IOMMU_SYS,
     VIRT_GPIO,
+    VIRT_PWM,
 };
 
 enum {
     UART0_IRQ = 1,
     GPIO_IRQ = 2,
+    PWM_IRQ = 3,
     VIRTIO_IRQ = 6, /* 6 to 13 */
     VIRTIO_COUNT = 8,
     RTC_IRQ = 14,
