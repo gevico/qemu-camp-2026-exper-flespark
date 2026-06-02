@@ -66,7 +66,9 @@ static void g233_gpio_update_state(G233GPIOState *s)
 
         if (trig_level) {
             if ((pol_high && pin_val) || (!pol_high && !pin_val)) {
-                new_is |= mask;
+                if (s->gpio_ie & mask) {
+                    new_is |= mask;
+                }
             } else {
                 new_is &= ~mask;
             }
@@ -75,7 +77,9 @@ static void g233_gpio_update_state(G233GPIOState *s)
                 bool rising = pin_val && !prev_val;
                 bool falling = !pin_val && prev_val;
                 if ((pol_high && rising) || (!pol_high && falling)) {
-                    new_is |= mask;
+                    if (s->gpio_ie & mask) {
+                        new_is |= mask;
+                    }
                 }
             }
         }
