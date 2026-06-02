@@ -36,6 +36,7 @@
 #include "hw/riscv/iommu.h"
 #include "hw/riscv/riscv-iommu-bits.h"
 #include "hw/gpio/g233_gpio.h"
+#include "hw/timer/g233_pwm.h"
 #include "hw/riscv/g233.h"
 #include "hw/riscv/boot.h"
 #include "hw/riscv/numa.h"
@@ -103,7 +104,8 @@ static const MemMapEntry virt_memmap[] = {
     [VIRT_PCIE_ECAM] =    { 0x30000000,    0x10000000 },
     [VIRT_PCIE_MMIO] =    { 0x40000000,    0x40000000 },
     [VIRT_DRAM] =         { 0x80000000,           0x0 },
-    [VIRT_GPIO] =         { 0x10012000,         0x100 },
+    [VIRT_GPIO] =         { 0x10012000,         G233_GPIO_SIZE },
+    [VIRT_PWM] =          { 0x10015000,         G233_PWM_SIZE },
 };
 
 /* PCIe high mmio is fixed for RV32 */
@@ -1039,6 +1041,30 @@ static void create_fdt_gpio(RISCVG233State *s,
     qemu_fdt_setprop_cell(ms->fdt, name, "ngpio", G233_GPIO_PINS);
 }
 
+static void create_fdt_pwm(RISCVG233State *s,
+                            uint32_t irq_mmio_phandle)
+{
+    g_autofree char *name = NULL;
+    MachineState *ms = MACHINE(s);
+
+    name = g_strdup_printf("/soc/pwm@%"HWADDR_PRIx,
+                           s->memmap[VIRT_PWM].base);
+    qemu_fdt_add_subnode(ms->fdt, name);
+    qemu_fdt_setprop_string(ms->fdt, name, "compatible",
+                            "gevico,g233-pwm");
+    qemu_fdt_setprop_sized_cells(ms->fdt, name, "reg",
+                                  2, s->memmap[VIRT_PWM].base,
+                                  2, s->memmap[VIRT_PWM].size);
+    qemu_fdt_setprop_cell(ms->fdt, name, "interrupt-parent",
+                          irq_mmio_phandle);
+    if (s->aia_type == G233_AIA_TYPE_NONE) {
+        qemu_fdt_setprop_cell(ms->fdt, name, "interrupts", PWM_IRQ);
+    } else {
+        qemu_fdt_setprop_cells(ms->fdt, name, "interrupts", PWM_IRQ, 0x4);
+    }
+    qemu_fdt_setprop_cell(ms->fdt, name, "#pwm-cells", 1);
+}
+
 static void create_fdt_flash(RISCVG233State *s)
 {
     MachineState *ms = MACHINE(s);
@@ -1188,6 +1214,8 @@ static void finalize_fdt(RISCVG233State *s)
     create_fdt_rtc(s, irq_mmio_phandle);
 
     create_fdt_gpio(s, irq_mmio_phandle);
+
+    create_fdt_pwm(s, irq_mmio_phandle);
 }
 
 static void create_fdt(RISCVG233State *s)
@@ -1749,6 +1777,11 @@ static void virt_machine_init(MachineState *machine)
     sysbus_create_simple(TYPE_G233_GPIO,
         s->memmap[VIRT_GPIO].base,
         qdev_get_gpio_in(mmio_irqchip, GPIO_IRQ));
+
+    /* PWM controller */
+    sysbus_create_simple(TYPE_G233_PWM,
+        s->memmap[VIRT_PWM].base,
+        qdev_get_gpio_in(mmio_irqchip, PWM_IRQ));
 
     for (i = 0; i < ARRAY_SIZE(s->flash); i++) {
         /* Map legacy -drive if=pflash to machine properties */

@@ -33,6 +33,9 @@ config PXA2XX_TIMER
 config SIFIVE_PWM
     bool
 
+config G233_PWM
+    bool
+
 config STM32F2XX_TIMER
     bool
 
