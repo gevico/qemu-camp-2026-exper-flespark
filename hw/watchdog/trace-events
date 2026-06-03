@@ -23,6 +23,14 @@ imx2_wdt_write(uint32_t addr, uint16_t data) "[0x%" PRIx32 "] <- 0x%" PRIx16
 imx2_wdt_interrupt(void) ""
 imx2_wdt_expired(void) ""
 
+# g233_wdt.c
+g233_wdt_read(uint64_t addr, uint32_t data) "G233 watchdog read: addr 0x%" PRIx64 " data 0x%" PRIx32
+g233_wdt_write(uint64_t addr, uint32_t data) "G233 watchdog write: addr 0x%" PRIx64 " data 0x%" PRIx32
+g233_wdt_reset(void) "G233 watchdog: reset"
+g233_wdt_interrupt(void) "G233 watchdog: interrupt"
+g233_wdt_expire(void) "G233 watchdog: expire"
+g233_wdt_feed(void) "G233 watchdog: feed"
+
 # spapr_watchdog.c
 spapr_watchdog_start(uint64_t flags, uint64_t num, uint64_t timeout) "Flags 0x%" PRIx64 " num=%" PRId64 " %" PRIu64 "ms"
 spapr_watchdog_stop(uint64_t num, uint64_t ret) "num=%" PRIu64 " ret=%" PRId64
