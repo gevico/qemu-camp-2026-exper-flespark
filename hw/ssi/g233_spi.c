@@ -106,6 +106,7 @@ static void g233_spi_write(void *opaque, hwaddr addr,
     switch (addr) {
     case R_SPI_CR1:
         s->cr1 = value & 0xE5;  /* SPE|MSTR|ERRIE|RXNEIE|TXEIE */
+	g233_spi_update_irq(s);
         break;
 
     case R_SPI_CR2: {
