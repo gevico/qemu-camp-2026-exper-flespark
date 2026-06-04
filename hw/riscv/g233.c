@@ -38,6 +38,7 @@
 #include "hw/gpio/g233_gpio.h"
 #include "hw/timer/g233_pwm.h"
 #include "hw/watchdog/g233_wdt.h"
+#include "hw/ssi/g233_spi.h"
 #include "hw/riscv/g233.h"
 #include "hw/riscv/boot.h"
 #include "hw/riscv/numa.h"
@@ -108,6 +109,7 @@ static const MemMapEntry virt_memmap[] = {
     [VIRT_WDT] =          { 0x10010000,         G233_WDT_SIZE },
     [VIRT_GPIO] =         { 0x10012000,         G233_GPIO_SIZE },
     [VIRT_PWM] =          { 0x10015000,         G233_PWM_SIZE },
+    [VIRT_SPI] =          { 0x10018000,         G233_SPI_SIZE },
 };
 
 /* PCIe high mmio is fixed for RV32 */
@@ -1789,6 +1791,40 @@ static void virt_machine_init(MachineState *machine)
     sysbus_create_simple(TYPE_G233_PWM,
         s->memmap[VIRT_PWM].base,
         qdev_get_gpio_in(mmio_irqchip, PWM_IRQ));
+
+    /* SPI controller + NOR Flash devices */
+    {
+        DeviceState *spi_dev;
+        SysBusDevice *spi_sbd;
+        SSIBus *spi_bus;
+        qemu_irq cs_line;
+
+        spi_dev = qdev_new(TYPE_G233_SPI);
+        sysbus_realize_and_unref(SYS_BUS_DEVICE(spi_dev), &error_fatal);
+        spi_sbd = SYS_BUS_DEVICE(spi_dev);
+        sysbus_mmio_map(spi_sbd, 0, s->memmap[VIRT_SPI].base);
+        sysbus_connect_irq(spi_sbd, 0,
+                           qdev_get_gpio_in(mmio_irqchip, SPI_IRQ));
+
+        spi_bus = G233_SPI(spi_dev)->spi;
+
+        /* CS0: W25X16 (2 MB) */
+        {
+            DeviceState *flash_dev = qdev_new("w25x16");
+            qdev_realize_and_unref(flash_dev, BUS(spi_bus), &error_fatal);
+            cs_line = qdev_get_gpio_in_named(flash_dev, SSI_GPIO_CS, 0);
+            sysbus_connect_irq(spi_sbd, 1, cs_line);
+        }
+
+        /* CS1: W25X32 (4 MB) */
+        {
+            DeviceState *flash_dev = qdev_new("w25x32");
+            qdev_prop_set_uint8(flash_dev, "cs", 1);
+            qdev_realize_and_unref(flash_dev, BUS(spi_bus), &error_fatal);
+            cs_line = qdev_get_gpio_in_named(flash_dev, SSI_GPIO_CS, 0);
+            sysbus_connect_irq(spi_sbd, 2, cs_line);
+        }
+    }
 
     for (i = 0; i < ARRAY_SIZE(s->flash); i++) {
         /* Map legacy -drive if=pflash to machine properties */

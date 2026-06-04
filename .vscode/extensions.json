@@ -1,10 +1,11 @@
 {
   "recommendations": [
+    "cnbcool.cnb-welcome",
     "llvm-vs-code-extensions.vscode-clangd",
     "mesonbuild.vscode-meson",
     "EditorConfig.EditorConfig",
     "ms-vscode.cpptools",
     "bierner.markdown-preview-github-styles",
-    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker"
   ]
 }
