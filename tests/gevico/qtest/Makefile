@@ -28,6 +28,7 @@ SHORT_NAMES := \
     flash-read-interrupt \
     spi-cs \
     spi-overrun \
+    virtio-mmio \
     i2c-gpio-init \
     i2c-gpio-bitbang \
     i2c-eeprom-rw \
