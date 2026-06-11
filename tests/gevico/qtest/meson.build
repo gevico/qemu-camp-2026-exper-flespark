@@ -10,6 +10,7 @@ qtests_riscv64 = [
     'test-spi-cs',
     'test-spi-overrun',
     'test-virtio-mmio',
+    'test-virtio-device',
     'test-i2c-gpio-init',
     'test-i2c-gpio-bitbang',
     'test-i2c-eeprom-rw',
@@ -17,6 +18,7 @@ qtests_riscv64 = [
     'test-spi-rust-init',
     'test-spi-rust-transfer',
     'test-spi-rust-flash',
+    'test-linux-boot',
 ]
 qtests = {}
 qtest_executables = {}

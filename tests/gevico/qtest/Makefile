@@ -29,13 +29,15 @@ SHORT_NAMES := \
     spi-cs \
     spi-overrun \
     virtio-mmio \
+    virtio-device \
     i2c-gpio-init \
     i2c-gpio-bitbang \
     i2c-eeprom-rw \
     i2c-eeprom-page \
     spi-rust-init \
     spi-rust-transfer \
-    spi-rust-flash
+    spi-rust-flash \
+    linux-boot
 
 # ── run-<short-name> ──────────────────────────────────────────────────
 # e.g. make run-board-g233
