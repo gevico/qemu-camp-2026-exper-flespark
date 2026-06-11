@@ -979,8 +979,7 @@ static void create_fdt_uart(RISCVG233State *s,
     name = g_strdup_printf("/soc/serial@%"HWADDR_PRIx,
                            s->memmap[VIRT_UART0].base);
     qemu_fdt_add_subnode(ms->fdt, name);
-    //qemu_fdt_setprop_string(ms->fdt, name, "compatible", "ns16550a");
-    qemu_fdt_setprop_string(ms->fdt, name, "compatible", "pl011");
+    qemu_fdt_setprop_string(ms->fdt, name, "compatible", "ns16550a");
     qemu_fdt_setprop_sized_cells(ms->fdt, name, "reg",
                                  2, s->memmap[VIRT_UART0].base,
                                  2, s->memmap[VIRT_UART0].size);
@@ -1767,12 +1766,9 @@ static void virt_machine_init(MachineState *machine)
 
     create_platform_bus(s, mmio_irqchip);
 
-    // serial_mm_init(system_memory, s->memmap[VIRT_UART0].base,
-    //     0, qdev_get_gpio_in(mmio_irqchip, UART0_IRQ), 399193,
-    //     serial_hd(0), DEVICE_LITTLE_ENDIAN);
-    pl011_create(s->memmap[VIRT_UART0].base,
-                 qdev_get_gpio_in(mmio_irqchip, UART0_IRQ),
-                 serial_hd(0));
+    serial_mm_init(system_memory, s->memmap[VIRT_UART0].base,
+        0, qdev_get_gpio_in(mmio_irqchip, UART0_IRQ), 399193,
+        serial_hd(0), DEVICE_LITTLE_ENDIAN);
 
     sysbus_create_simple("goldfish_rtc", s->memmap[VIRT_RTC].base,
         qdev_get_gpio_in(mmio_irqchip, RTC_IRQ));

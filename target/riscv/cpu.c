@@ -3092,7 +3092,7 @@ static const TypeInfo riscv_cpu_type_infos[] = {
 #if defined(TARGET_RISCV64)
     DEFINE_RISCV_CPU(TYPE_RISCV_CPU_G233, TYPE_RISCV_VENDOR_CPU,
         .misa_mxl_max = MXL_RV64,
-        .misa_ext = RVI | RVM | RVA | RVC | RVU | RVF | RVD,
+        .misa_ext = RVI | RVM | RVA | RVC | RVS | RVU | RVF | RVD,
         .priv_spec = PRIV_VERSION_1_12_0,
         .vext_spec = VEXT_VERSION_1_00_0,
         .cfg.ext_xg233 = true,
